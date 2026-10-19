@@ -269,6 +269,13 @@ DOCUMENTATION = """
             default: {}
             env:
                 - name: NETBOX_HEADERS
+        containers:
+            description:
+                - If True, it adds NetBox Docker plugin container information in host vars.
+            default: true
+            type: boolean
+            version_added: "custom"
+
 """
 
 EXAMPLES = """
@@ -586,6 +593,21 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             self._pluralize_group_by("platform"): self.extract_platform,
             self._pluralize_group_by("device_type"): self.extract_device_type,
             self._pluralize_group_by("manufacturer"): self.extract_manufacturer,
+
+####
+            # Docker plugin additions
+            "virtual_machine": self.extract_virtual_machine,
+            "container_name": self.extract_container_name,
+            "container_image": self.extract_container_image,
+            "container_state": self.extract_container_state,
+            "container_environment": self.extract_container_environment,
+#
+#            "containers": self.extract_containers,
+#            "container_ports": self.extract_container_ports,
+#            "container_labels": self.extract_container_labels,
+#            "container_env": self.extract_container_env,
+#            "container_mounts": self.extract_container_mounts,
+#            "container_networks": self.extract_container_networks,
         }
 
         if self.api_version >= version.parse("2.11"):
@@ -1047,6 +1069,71 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
     def extract_asset_tag(self, host):
         return host.get("asset_tag", None)
+
+####
+
+    def extract_virtual_machine(self, host):
+        if host.get("is_virtual"):
+            return host.get("name")
+        return None
+
+    def _get_host_containers(self, host):
+        if not self.containers:
+            return []
+
+        host_name = host.get("name")
+        if not host_name:
+            return []
+
+        return self.vm_containers_lookup.get(host_name, [])
+
+    def extract_container_name(self, host):
+        containers = self._get_host_containers(host)
+        names = [c["container_name"] for c in containers if c.get("container_name")]
+        return names or None
+
+    def extract_container_image(self, host):
+        containers = self._get_host_containers(host)
+        images = [c["container_image"] for c in containers if c.get("container_image")]
+        return images or None
+
+    def extract_container_state(self, host):
+        containers = self._get_host_containers(host)
+        states = [c["container_state"] for c in containers if c.get("container_state")]
+        return states or None
+
+    def extract_container_environment(self, host):
+        containers = self._get_host_containers(host)
+        envs = [
+            c["container_environment"]
+            for c in containers
+            if c.get("container_environment") is not None
+        ]
+        return envs or None
+
+####
+#    def extract_containers(self, host):
+#        try:
+#            containers_lookup = (
+#                self.vm_containers_lookup
+#                if host["is_virtual"]
+#                else self.device_containers_lookup
+#            )
+#
+#            containers = []
+#            for container in containers_lookup[host["id"]].values():
+#                container = dict(container)
+#                cid = container["id"]
+#                container["ports"] = self.container_ports_lookup.get(cid, [])
+#                container["labels"] = self.container_labels_lookup.get(cid, [])
+#                container["env"] = self.container_env_lookup.get(cid, [])
+#                container["mounts"] = self.container_mounts_lookup.get(cid, [])
+#                container["network_settings"] = self.container_networks_lookup.get(cid, [])
+#                containers.append(container)
+#
+#            return containers
+#        except Exception:
+#            return
 
     def refresh_platforms_lookup(self):
         url = self.api_endpoint + "/api/dcim/platforms/?limit=0"
@@ -1533,6 +1620,39 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             # Remove "interface" attribute, as that's redundant when ipaddress is added to an interface
             del ipaddress_copy["interface"]
 
+####
+    def refresh_containers(self):
+        url = self.api_endpoint + "/api/plugins/netbox-docker-plugin/containers/?limit=0"
+        containers = self.get_resource_list(api_url=url)
+
+        # Map VM name -> list of matching containers
+        self.vm_containers_lookup = defaultdict(list)
+
+        for container in containers:
+            host = container.get("host") or {}
+            vm_name = host.get("name")
+            if not vm_name:
+                continue
+
+            env_list = container.get("env") or []
+            netbox_id = None
+            for env in env_list:
+                if env.get("var_name") == "NETBOX_ID":
+                    netbox_id = env.get("value")
+                    break
+
+            image = container.get("image") or {}
+            image_name = image.get("name")
+
+            self.vm_containers_lookup[vm_name].append(
+                {
+                    "container_name": container.get("name"),
+                    "container_image": image_name,
+                    "container_state": container.get("state"),
+                    "container_environment": netbox_id,
+                }
+            )
+####
     @property
     def lookup_processes(self):
         lookups = [
@@ -1555,7 +1675,10 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
         if self.services:
             lookups.append(self.refresh_services)
-
+####
+        if self.containers:
+            lookups.append(self.refresh_containers)
+####
         if self.racks:
             lookups.extend(
                 [
