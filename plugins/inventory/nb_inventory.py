@@ -596,7 +596,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
 ####
             # Docker plugin additions
-#            "virtual_machine": self.extract_virtual_machine,
+            "virtual_machine": self.extract_virtual_machine,
+            "containers": self.extract_containers,
 #            "container_name": self.extract_container_name,
 #            "container_image": self.extract_container_image,
 #            "container_state": self.extract_container_state,
@@ -616,11 +617,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 #            self._set_variable(hostname, "container_state", self.extract_container_state(host))
 #            self._set_variable(hostname, "container_environment", self.extract_container_environment(host))
 
-        extractors.update(
-            {
-                "containers": self.extract_containers,
-            }
-        )
+#        extractors.update(
+#            {
+#                "containers": self.extract_containers,
+#            }
+#        )
 
 
         if self.api_version >= version.parse("2.11"):
@@ -1085,43 +1086,65 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
 ####
 
+#    def extract_containers(self, host):
+#        names = host.get("container_name", []) or []
+#        images = host.get("container_image", []) or []
+#        states = host.get("container_state", []) or []
+#        envs = host.get("container_environment", []) or []
+#
+#        max_len = max(len(names), len(images), len(states), len(envs), 0)
+#        containers = []
+#
+#        for i in range(max_len):
+#            containers.append(
+#                {
+#                    "name": names[i] if i < len(names) else None,
+#                    "image": images[i] if i < len(images) else None,
+#                    "state": states[i] if i < len(states) else None,
+#                    "environment": envs[i] if i < len(envs) else [],
+#                }
+#            )
+#
+#        return containers
+
+
+    def extract_virtual_machine(self, host):
+        if host.get("is_virtual"):
+            return host.get("name")
+        return None
+
+    def _get_host_containers(self, host):
+        if not self.containers:
+            return []
+
+        host_name = host.get("name")
+        if not host_name:
+            return []
+
+        return self.vm_containers_lookup.get(host_name, [])
+
     def extract_containers(self, host):
-        names = host.get("container_name", []) or []
-        images = host.get("container_image", []) or []
-        states = host.get("container_state", []) or []
-        envs = host.get("container_environment", []) or []
+        try:
+            containers = self._get_host_containers(host)
+            if not containers:
+                return []
 
-        max_len = max(len(names), len(images), len(states), len(envs), 0)
-        containers = []
+            extracted = []
+            for container in containers:
+                extracted.append(
+                    {
+                        "name": container.get("container_name"),
+                        "image": container.get("container_image"),
+                        "state": container.get("container_state"),
+                        "environment": container.get("container_environment", []),
+                    }
+                )
 
-        for i in range(max_len):
-            containers.append(
-                {
-                    "name": names[i] if i < len(names) else None,
-                    "image": images[i] if i < len(images) else None,
-                    "state": states[i] if i < len(states) else None,
-                    "environment": envs[i] if i < len(envs) else [],
-                }
-            )
-
-        return containers
+            return extracted
+        except Exception:
+            return []
 
 
-#    def extract_virtual_machine(self, host):
-#        if host.get("is_virtual"):
-#            return host.get("name")
-#        return None
-#
-#    def _get_host_containers(self, host):
-#        if not self.containers:
-#            return []
-#
-#        host_name = host.get("name")
-#        if not host_name:
-#            return []
-#
-#        return self.vm_containers_lookup.get(host_name, [])
-#
 #    def extract_container_name(self, host):
 #        containers = self._get_host_containers(host)
 #        names = [c["container_name"] for c in containers if c.get("container_name")]
@@ -1145,7 +1168,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 #            if c.get("container_environment") is not None
 #        ]
 #        return envs or None
-
+#
 ####
 #    def extract_containers(self, host):
 #        try:
