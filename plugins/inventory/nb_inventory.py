@@ -610,6 +610,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 #            "container_networks": self.extract_container_networks,
         }
 
+#        if self.containers:
+#            self._set_variable(hostname, "container_name", self.extract_container_name(host))
+#            self._set_variable(hostname, "container_image", self.extract_container_image(host))
+#            self._set_variable(hostname, "container_state", self.extract_container_state(host))
+#            self._set_variable(hostname, "container_environment", self.extract_container_environment(host))
+
+
         if self.api_version >= version.parse("2.11"):
             extractors.update(
                 {
@@ -1622,7 +1629,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
 ####
     def refresh_containers(self):
-        url = self.api_endpoint + "/api/plugins/netbox-docker-plugin/containers/?limit=0"
+        url = self.api_endpoint + "/api/plugins/docker/containers/?limit=0"
         containers = self.get_resource_list(api_url=url)
 
         # Map VM name -> list of matching containers
@@ -2309,6 +2316,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
         self.ca_path = self.get_option("ca_path")
         self.oob_ip_as_primary_ip = self.get_option("oob_ip_as_primary_ip")
         self.hostname_field = self.get_option("hostname_field")
+
+####
+        self.containers = self.get_option("containers")
 
         self._set_authorization()
 
