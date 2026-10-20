@@ -272,7 +272,7 @@ DOCUMENTATION = """
         containers:
             description:
                 - If True, it adds NetBox Docker plugin container information in host vars.
-            default: true
+            default: false
             type: boolean
             version_added: "custom"
 
