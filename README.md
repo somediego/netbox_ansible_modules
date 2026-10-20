@@ -1,5 +1,18 @@
 # Forked repository from  -->> [https://github.com/netbox-community/ansible_modules]
 
+Quick start, inventory, e.g.:
+
+```
+plugin: "cmdb.netbox.nb_inventory"
+api_endpoint: https://<example.com>
+token: nbt_ZAeCLAuxmgc3.Xxxxxxxxxxxxxxxxxxxxxxxxxx
+validate_certs: false
+containers: true
+```
+
+This repository customize 'nb_inventory.py' file. For Any other functionality please use official collection.  
+[https://github.com/netbox-community/ansible_modules]
+
 # Ansible Modules for NetBox
 
 ## Description
