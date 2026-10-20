@@ -595,8 +595,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             self._pluralize_group_by("manufacturer"): self.extract_manufacturer,
 
             #### CMDB custom ####################################################
-            # Docker plugin additions
-            "virtual_machine": self.extract_virtual_machine,
             "containers": self.extract_containers,
             #####################################################################
         }
@@ -1062,11 +1060,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
         return host.get("asset_tag", None)
 
     #### CMDB custom ####################################################
-    def extract_virtual_machine(self, host):
-        if host.get("is_virtual"):
-            return host.get("name")
-        return None
-
     def _get_host_containers(self, host):
         if not self.containers:
             return []
