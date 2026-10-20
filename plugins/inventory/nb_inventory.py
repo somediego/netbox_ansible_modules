@@ -24,7 +24,7 @@ DOCUMENTATION = """
         plugin:
             description: token that ensures this is a source file for the 'netbox' plugin.
             required: true
-            choices: ['netbox.netbox.nb_inventory']
+            choices: ['cmdb.netbox.nb_inventory']
         api_endpoint:
             description: Endpoint of the NetBox API
             required: true
@@ -282,7 +282,7 @@ EXAMPLES = """
 # netbox_inventory.yml file in YAML format
 # Example command line: ansible-inventory -v --list -i netbox_inventory.yml
 
-plugin: netbox.netbox.nb_inventory
+plugin: cmdb.netbox.nb_inventory
 api_endpoint: http://localhost:8000
 validate_certs: true
 config_context: false
@@ -431,7 +431,7 @@ else:
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
-    NAME = "netbox.netbox.nb_inventory"
+    NAME = "cmdb.netbox.nb_inventory"
 
     def _fetch_information(self, url):
         results = None
@@ -594,10 +594,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             self._pluralize_group_by("device_type"): self.extract_device_type,
             self._pluralize_group_by("manufacturer"): self.extract_manufacturer,
 
-####
+            #### CMDB custom ####################################################
             # Docker plugin additions
             "virtual_machine": self.extract_virtual_machine,
             "containers": self.extract_containers,
+            #####################################################################
         }
 
         if self.api_version >= version.parse("2.11"):
@@ -1060,7 +1061,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
     def extract_asset_tag(self, host):
         return host.get("asset_tag", None)
 
-####
+    #### CMDB custom ####################################################
     def extract_virtual_machine(self, host):
         if host.get("is_virtual"):
             return host.get("name")
@@ -1096,7 +1097,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             return extracted
         except Exception:
             return []
-####
+    #####################################################################
 
     def refresh_platforms_lookup(self):
         url = self.api_endpoint + "/api/dcim/platforms/?limit=0"
@@ -1583,7 +1584,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             # Remove "interface" attribute, as that's redundant when ipaddress is added to an interface
             del ipaddress_copy["interface"]
 
-####
+    #### CMDB custom ####################################################
     def refresh_containers(self):
         url = self.api_endpoint + "/api/plugins/docker/containers/?limit=0"
         containers = self.get_resource_list(api_url=url)
@@ -1615,7 +1616,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                     "container_env_netbox_id": netbox_id,
                 }
             )
-####
+    #####################################################################
     @property
     def lookup_processes(self):
         lookups = [
@@ -1638,10 +1639,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
         if self.services:
             lookups.append(self.refresh_services)
-####
+
+        #### CMDB custom ####################################################
         if self.containers:
             lookups.append(self.refresh_containers)
-####
+        #####################################################################
+
         if self.racks:
             lookups.extend(
                 [
@@ -2112,11 +2115,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             else:
                 self._set_variable(hostname, attribute, extracted_value)
 
-####
+        #### CMDB custom ####################################################
         # New structured containers variable here
         containers = self.extract_containers(host)
         if containers is not None:
             self._set_variable(hostname, "containers", containers)
+        #####################################################################
 
     def _get_host_virtual_chassis_master(self, host):
         virtual_chassis = host.get("virtual_chassis", None)
@@ -2279,8 +2283,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
         self.oob_ip_as_primary_ip = self.get_option("oob_ip_as_primary_ip")
         self.hostname_field = self.get_option("hostname_field")
 
-####
+        #### CMDB custom ####################################################
         self.containers = self.get_option("containers")
+        #####################################################################
 
         self._set_authorization()
 
