@@ -10,6 +10,22 @@ validate_certs: false
 containers: true
 ```
 
+Install collection, e.g.:
+```
+ansible-galaxy collection install git@github.com:somediego/netbox_ansible_modules.git,feature/docker_plugin
+```
+
+collections/requirements.yml, e.g.:
+```
+collections:
+  # Install from a branch
+  #  ansible-galaxy collection install git@github.com:somediego/netbox_ansible_modules.git,feature/docker_plugin
+  - name: https://github.com/somediego/netbox_ansible_modules.git
+    type: git
+    version: feature/docker_plugin
+```
+
+
 This repository customize 'nb_inventory.py' file. For Any other functionality please use official collection.  
 [https://github.com/netbox-community/ansible_modules]
 

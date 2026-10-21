@@ -1079,7 +1079,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             extracted = []
             for container in containers:
                 if container.get("container_name", "").startswith("netbox-docker-netbox-"):
-#                if container.get("container_name") == "netbox-docker-netbox-1":
                     extracted.append(
                         {
                             "name": container.get("container_name"),
@@ -1105,7 +1104,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                             "state": container.get("container_state"),
                         }
                     )
-#                            "env": {},
             return extracted
         except Exception:
             return []
@@ -1618,7 +1616,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
             for env in env_list:
                 # Just get env variables if netbox contaner
-#                if container.get("name") != "netbox-docker-netbox-1":
                 if container.get("name", "").startswith("netbox-docker-netbox-") == False:
                     break;
 
