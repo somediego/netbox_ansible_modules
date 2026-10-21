@@ -1078,15 +1078,34 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
             extracted = []
             for container in containers:
-                extracted.append(
-                    {
-                        "name": container.get("container_name"),
-                        "image": container.get("container_image"),
-                        "state": container.get("container_state"),
-                        "netbox_id": container.get("container_env_netbox_id", []),
-                    }
-                )
-
+                if container.get("container_name", "").startswith("netbox-docker-netbox-"):
+#                if container.get("container_name") == "netbox-docker-netbox-1":
+                    extracted.append(
+                        {
+                            "name": container.get("container_name"),
+                            "image": container.get("container_image"),
+                            "state": container.get("container_state"),
+                            "env": {
+                                "netbox_id": container.get("container_env_netbox_id", []),
+                                "remote_auth_enabled": container.get(
+                                    "container_env_remote_auth_enabled", []
+                                ),
+                                "remote_auth_superusers": container.get(
+                                    "container_env_remote_auth_superusers", []
+                                ),
+                                "banner_campaigns": container.get("container_env_banner_campaigns", []),
+                            },
+                        }
+                    )
+                else:
+                    extracted.append(
+                        {
+                            "name": container.get("container_name"),
+                            "image": container.get("container_image"),
+                            "state": container.get("container_state"),
+                        }
+                    )
+#                            "env": {},
             return extracted
         except Exception:
             return []
@@ -1593,10 +1612,24 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
             env_list = container.get("env") or []
             netbox_id = None
+            remote_auth_enabled = None
+            remote_auth_superusers = None
+            banner_campaigns = None
+
             for env in env_list:
+                # Just get env variables if netbox contaner
+#                if container.get("name") != "netbox-docker-netbox-1":
+                if container.get("name", "").startswith("netbox-docker-netbox-") == False:
+                    break;
+
                 if env.get("var_name") == "NETBOX_ID":
                     netbox_id = env.get("value")
-                    break
+                elif env.get("var_name") == "REMOTE_AUTH_ENABLED":
+                    remote_auth_enabled = env.get("value")
+                elif env.get("var_name") == "REMOTE_AUTH_SUPERUSERS":
+                    remote_auth_superusers = env.get("value")
+                elif env.get("var_name") == "BANNER_CAMPAIGNS":
+                    remote_auth_superusers = env.get("value")
 
             image = container.get("image") or {}
             image_name = image.get("name")
@@ -1607,6 +1640,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                     "container_image": str(image_name),
                     "container_state": container.get("state"),
                     "container_env_netbox_id": netbox_id,
+                    "container_env_remote_auth_enabled": remote_auth_enabled,
+                    "container_env_remote_auth_superusers": remote_auth_superusers,
+                    "container_env_banner_campaigns": banner_campaigns,
                 }
             )
     #####################################################################
