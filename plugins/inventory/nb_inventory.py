@@ -1093,6 +1093,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                                     "container_env_remote_auth_superusers", []
                                 ),
                                 "banner_campaigns": container.get("container_env_banner_campaigns", []),
+                                "awx_host": container.get("container_env_awx_host", []),
                             },
                         }
                     )
@@ -1613,6 +1614,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             remote_auth_enabled = None
             remote_auth_superusers = None
             banner_campaigns = None
+            awx_host = None
 
             for env in env_list:
                 # Just get env variables if netbox contaner
@@ -1627,6 +1629,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                     remote_auth_superusers = env.get("value")
                 elif env.get("var_name") == "BANNER_CAMPAIGNS":
                     remote_auth_superusers = env.get("value")
+                elif env.get("var_name") == "AWX_HOST":
+                    awx_host = env.get("value")
 
             image = container.get("image") or {}
             image_name = image.get("name")
@@ -1640,6 +1644,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                     "container_env_remote_auth_enabled": remote_auth_enabled,
                     "container_env_remote_auth_superusers": remote_auth_superusers,
                     "container_env_banner_campaigns": banner_campaigns,
+                    "container_env_awx_host": awx_host,
                 }
             )
     #####################################################################

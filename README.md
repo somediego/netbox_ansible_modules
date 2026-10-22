@@ -57,6 +57,7 @@ all:
             name: netbox-docker-agent
             state: running
           - env:
+              awx_host: null
               banner_campaigns: null
               netbox_id: 95e70000-0000-5555-9999-xxxxxxxxxxxxx
               remote_auth_enabled: 'false'
