@@ -1,6 +1,17 @@
 # Forked repository from  -->> [https://github.com/netbox-community/ansible_modules]
 
-Quick start, inventory, e.g.:
+| Branch                | Mirroring | Allowed to merge/push | Repository source |
+|-----------------------|-----------|-----------------------|-------------------|
+| devel                 | yes       | no one                | https://github.com/netbox-community/ansible_modules.git |
+| feature/docker_plugin | no        | yes                   |                   |
+
+### Description
+
+This is a custom implementation of 'netbox.netbox.nb_inventory' module, to include Netbox-docker-plugin variables when inventory is fetched.
+
+### Quick start
+
+Inventory file, e.g.:
 
 ```
 plugin: "cmdb.netbox.nb_inventory"
@@ -10,26 +21,53 @@ validate_certs: false
 containers: true
 ```
 
-Install collection, e.g.:
+Option-1. Install collection, e.g.:
 ```
-ansible-galaxy collection install git@github.com:somediego/netbox_ansible_modules.git,feature/docker_plugin
+ansible-galaxy collection install https://oauth2:${NB_ANSIBLE_MODULES_TOKEN}@<repo_URL>/netbox_ansible_modules.git,feature/docker_plugin
 ```
 
-collections/requirements.yml, e.g.:
+Option-2. Edit collections/requirements.yml, e.g.:
 ```
 collections:
   # Install from a branch
-  #  ansible-galaxy collection install git@github.com:somediego/netbox_ansible_modules.git,feature/docker_plugin
-  - name: https://github.com/somediego/netbox_ansible_modules.git
+  - name: https://oauth2:${NB_ANSIBLE_MODULES_TOKEN}@<repo_URL>/netbox_ansible_modules.git
     type: git
     version: feature/docker_plugin
+
 ```
 
+Test reaching variables
+```
+ansible-inventory -y -i inv.yml --list -l netbox-cmdb.ec.local
+```
 
-This repository customize 'nb_inventory.py' file. For Any other functionality please use official collection.  
-[https://github.com/netbox-community/ansible_modules]
+### Example output
 
-# Ansible Modules for NetBox
+```
+all:
+  children:
+    ungrouped:
+      hosts:
+        netbox-cmdb.ec.local:
+          ansible_host: 10.11.1.111
+          cluster: lab
+          cluster_type: aws
+          containers:
+          - image: saashup/netbox-docker-agent
+            name: netbox-docker-agent
+            state: running
+          - env:
+              banner_campaigns: null
+              netbox_id: 95e70000-0000-5555-9999-xxxxxxxxxxxxx
+              remote_auth_enabled: 'false'
+              remote_auth_superusers: null
+            image: registry.example.com/c4/shared/cmdb/netbox-distributions
+            name: netbox-docker-netbox-1
+            state: running
+        ..
+```
+
+# COMMUNITY DOCS ⬇️
 
 ## Description
 The NetBox Ansible project provides an Ansible collection for interacting with NetBox, the leading solution for modeling and documenting modern networks. By combining the traditional disciplines of IP address management (IPAM) and datacenter infrastructure management (DCIM) with powerful APIs and extensions, NetBox provides the ideal "source of truth" to power network automation.
