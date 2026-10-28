@@ -3,6 +3,7 @@
 | Branch                | Mirroring | Allowed to merge/push | Repository source |
 |-----------------------|-----------|-----------------------|-------------------|
 | devel                 | manual    | no one                | https://github.com/netbox-community/ansible_modules.git |
+| main                  | no        | yes                   |                   |
 | feature/docker_plugin | no        | yes                   |                   |
 
 ### Description
