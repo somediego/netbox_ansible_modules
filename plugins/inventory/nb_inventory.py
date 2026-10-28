@@ -1092,9 +1092,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                                 "remote_auth_superusers": container.get(
                                     "container_env_remote_auth_superusers", []
                                 ),
-                                "banner_campaigns": container.get("container_env_banner_campaigns", []),
-                                "awx_host": container.get("container_env_awx_host", []),
-                                "update_status": container.get("container_env_update_status", []),
+                            },
+                            "label": {
+                                "com.docker.compose.project.working_dir": container.get("container_label_working_dir", []),
+                                "cmdb_inv_banner_campaigns": container.get("container_label_banner_campaigns", []),
+                                "cmdb_inv_awx_host": container.get("container_label_awx_host", []),
+                                "cmdb_inv_update_status": container.get("container_label_update_status", []),
+                                "cmdb_inv_log_level": container.get("container_label_log_level", []),
                             },
                         }
                     )
@@ -1636,6 +1640,29 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                 elif env.get("var_name") == "UPDATE_STATUS":
                     update_status = env.get("value")
 
+            label_list = container.get("labels") or []
+            working_dir = None
+            update_status = None
+            banner_campaigns = None
+            awx_host = None
+            log_level = None
+
+            for label in label_list:
+                # Just get env variables if netbox contaner
+                if container.get("name", "").startswith("netbox-docker-netbox-") == False:
+                    break;
+
+                if label.get("key") == "com.docker.compose.project.working_dir":
+                    working_dir = label.get("value")
+                elif label.get("key") == "cmdb_inv_update_status":
+                    update_status = label.get("value")
+                elif label.get("key") == "cmdb_inv_banner_campaigns":
+                    banner_campaigns = label.get("value")
+                elif label.get("key") == "cmdb_inv_awx_host":
+                    awx_host = label.get("value")
+                elif label.get("key") == "cmdb_inv_log_level":
+                    log_level = label.get("value")
+
             image = container.get("image") or {}
             image_name = image.get("name")
 
@@ -1650,6 +1677,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                     "container_env_banner_campaigns": banner_campaigns,
                     "container_env_awx_host": awx_host,
                     "container_env_update_status": update_status,
+                    "container_label_working_dir": working_dir,
+                    "container_label_update_status": update_status,
+                    "container_label_banner_campaigns": banner_campaigns,
+                    "container_label_awx_host": awx_host,
+                    "container_label_log_level": log_level,
                 }
             )
     #####################################################################
