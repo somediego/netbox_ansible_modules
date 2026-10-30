@@ -58,12 +58,15 @@ all:
             name: netbox-docker-agent
             state: running
           - env:
-              awx_host: null
-              banner_campaigns: null
               netbox_id: 95e70000-0000-5555-9999-xxxxxxxxxxxxx
               remote_auth_enabled: 'false'
               remote_auth_superusers: null
             image: registry.example.com/c4/shared/cmdb/netbox-distributions
+            label:
+              cmdb_inv_awx_host: null
+              cmdb_inv_banner_campaigns: null
+              cmdb_inv_log_level: INFO
+              cmdb_inv_update_status: null
             name: netbox-docker-netbox-1
             state: running
         ..
