@@ -1078,41 +1078,44 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
             extracted = []
             for container in containers:
+                item = {
+                    "name": container.get("container_name"),
+                    "image": container.get("container_image"),
+                    "state": container.get("container_state"),
+                }
+
                 if container.get("container_name", "").startswith("netbox-docker-netbox-"):
-                    extracted.append(
-                        {
-                            "name": container.get("container_name"),
-                            "image": container.get("container_image"),
-                            "state": container.get("container_state"),
-                            "env": {
-                                "netbox_id": container.get("container_env_netbox_id", []),
-                                "remote_auth_enabled": container.get(
-                                    "container_env_remote_auth_enabled", []
-                                ),
-                                "remote_auth_superusers": container.get(
-                                    "container_env_remote_auth_superusers", []
-                                ),
-                            },
-                            "label": {
-                                "com.docker.compose.project.working_dir": container.get("container_label_working_dir", []),
-                                "cmdb_inv_banner_campaigns": container.get("container_label_banner_campaigns", []),
-                                "cmdb_inv_awx_host": container.get("container_label_awx_host", []),
-                                "cmdb_inv_update_status": container.get("container_label_update_status", []),
-                                "cmdb_inv_log_level": container.get("container_label_log_level", []),
-                            },
-                        }
-                    )
-                else:
-                    extracted.append(
-                        {
-                            "name": container.get("container_name"),
-                            "image": container.get("container_image"),
-                            "state": container.get("container_state"),
-                        }
-                    )
+                    env = {}
+                    if container.get("container_env_netbox_id") is not None:
+                        env["netbox_id"] = container.get("container_env_netbox_id")
+                    if container.get("container_env_remote_auth_enabled") is not None:
+                        env["remote_auth_enabled"] = container.get("container_env_remote_auth_enabled")
+                    if container.get("container_env_remote_auth_superusers") is not None:
+                        env["remote_auth_superusers"] = container.get("container_env_remote_auth_superusers")
+
+                    label = {}
+                    if container.get("container_label_working_dir") is not None:
+                        label["com.docker.compose.project.working_dir"] = container.get("container_label_working_dir")
+                    if container.get("container_label_banner_campaigns") is not None:
+                        label["cmdb_inv_banner_campaigns"] = container.get("container_label_banner_campaigns")
+                    if container.get("container_label_awx_host") is not None:
+                        label["cmdb_inv_awx_host"] = container.get("container_label_awx_host")
+                    if container.get("container_label_update_status") is not None:
+                        label["cmdb_inv_update_status"] = container.get("container_label_update_status")
+                    if container.get("container_label_log_level") is not None:
+                        label["cmdb_inv_log_level"] = container.get("container_label_log_level")
+
+                    if env:
+                        item["env"] = env
+                    if label:
+                        item["label"] = label
+
+                extracted.append(item)
+
             return extracted
         except Exception:
             return []
+
     #####################################################################
 
     def refresh_platforms_lookup(self):
@@ -1640,7 +1643,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             remote_auth_superusers = None
 
             for env in env_list:
-                # Just get env variables if netbox contaner
+                # Just get env variables if netbox container
                 if container.get("name", "").startswith("netbox-docker-netbox-") == False:
                     break;
 
@@ -1659,7 +1662,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             log_level = None
 
             for label in label_list:
-                # Just get env variables if netbox contaner
+                # Just get env variables if netbox container
                 if container.get("name", "").startswith("netbox-docker-netbox-") == False:
                     break;
 
