@@ -1601,6 +1601,19 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             del ipaddress_copy["interface"]
 
     #### CMDB custom ####################################################
+    def refresh_container_hosts(self):
+        url = self.api_endpoint + "/api/plugins/docker/hosts/?limit=0"
+        hosts = self.get_resource_list(api_url=url)
+
+        self.container_host_vm_lookup = {}
+
+        for host in hosts:
+            host_name = host.get("name")
+            if not host_name:
+                continue
+
+            self.container_host_vm_lookup[host_name] = host.get("virtual_machine")
+
     def refresh_containers(self):
         url = self.api_endpoint + "/api/plugins/docker/containers/?limit=0"
         containers = self.get_resource_list(api_url=url)
@@ -1610,7 +1623,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
         for container in containers:
             host = container.get("host") or {}
-            vm_name = host.get("name")
+            host_name = host.get("name")
+            if not host_name:
+                continue
+
+            virtual_machine = self.container_host_vm_lookup.get(host_name)
+            if not virtual_machine:
+                continue
+            vm_name = virtual_machine.get("name")
             if not vm_name:
                 continue
 
@@ -1710,6 +1730,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
         #### CMDB custom ####################################################
         if self.containers:
+            lookups.append(self.refresh_container_hosts)
             lookups.append(self.refresh_containers)
         #####################################################################
 
